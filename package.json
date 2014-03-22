@@ -1,5 +1,5 @@
 {
-  "name": "nodecast",
+  "name": "nicercast",
   "version": "0.0.1",
   "description": "simple icecast compliant streaming server",
   "main": "index.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/StephenCWan/nodecast.git"
+    "url": "https://github.com/StephenCWan/nicercast.git"
   },
   "keywords": [
     "streaming",
@@ -20,11 +20,12 @@
   "author": "Stephen Wan <stephen@stephenwan.net>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/StephenCWan/nodecast/issues"
+    "url": "https://github.com/StephenCWan/nicercast/issues"
   },
-  "homepage": "https://github.com/StephenCWan/nodecast",
+  "homepage": "https://github.com/StephenCWan/nicercast",
   "dependencies": {
     "express": "~3.5.0",
-    "icecast-stack": "~0.3.0"
+    "icecast-stack": "~0.3.0",
+    "lame": "~1.0.3"
   }
 }

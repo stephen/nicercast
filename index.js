@@ -1,6 +1,7 @@
 var express = require('express');
 var spawn = require("child_process").spawn;
 var icecast = require('icecast-stack');
+var lame = require('lame');
 
 var SAMPLE_SIZE = 16    // 16-bit samples, Little-Endian, Signed
   , CHANNELS = 2        // 2 channels (left and right)
@@ -10,7 +11,9 @@ var Server = function(inStream, opts) {
 	var app = express();
 	app.disable('x-powered-by');
 
-	app.get('/stream.m3u', function(req, res) {
+	// stream playlist (points to other endpoint)
+	app.get('/listen.m3u', function(req, res) {
+
 		var ip = req.headers['x-forwarded-for'] ||
 			req.connection.remoteAddress || 
 	    	req.socket.remoteAddress ||
@@ -21,21 +24,21 @@ var Server = function(inStream, opts) {
 		res.send('http://' + ip + '/stream');
 	});
 
-	app.get('/stream', function(req, res, next) {
+	app.get('/listen', function(req, res, next) {
 
 	    var acceptsMetadata = req.headers['icy-metadata'] == 1;
 	    var parsed = require('url').parse(req.url, true);
 
 	    // generate response header
 		var headers = {
-			"Content-Type": contentType,
+			"Content-Type": 'audio/mpeg',
 			"Connection" : 'close'
 		};
 		if (acceptsMetadata) {
 			headers['icy-name'] = 'Best';
 			headers['icy-metaint'] = 8192;
 		}
-			res.writeHead(200, headers);
+		res.writeHead(200, headers);
 
 
 		// setup metadata transport
@@ -44,17 +47,16 @@ var Server = function(inStream, opts) {
 			res.queueMetadata('the best track');
 		}
 
-		// setup encoder
-		var encoder = spawn('lame', [
-	   		"-S" // Operate silently (nothing to stderr)
-	  		, "-r" // Input is raw PCM
-	  		, "-V 9"
-	  		, "-s", SAMPLE_RATE / 1000 // Input sampling rate: 44,100
-	  		, "-"// Input from stdin
-	  		, "-" // Output to stderr
-		]);
+		// setup encodervar lame = require('lame');
 
-		encoder.stdout.on("data", function(chunk) {
+		// create the Encoder instance
+		var encoder = new lame.Encoder({
+		  channels: 2,        // 2 channels (left and right)
+		  bitDepth: 16,       // 16-bit samples
+		  sampleRate: 44100   // 44,100 Hz sample rate
+		});
+
+		encoder.on("data", function(chunk) {
 			res.write(chunk);
 		});
 
@@ -66,23 +68,22 @@ var Server = function(inStream, opts) {
 		*/
 
 		var callback = function(chunk) {
-			encoder.stdin.write(chunk);
+			encoder.write(chunk);
 		}
-		inStream.on("data", callback);
-		console.log('client connected');
 
+		inStream.on("data", callback);
 		req.connection.on("close", function() {
 
 			// This occurs when the HTTP client closes the connection.
-			encoder.stdin.end();
+			encoder.end();
 			inStream.removeListener("data", callback);
-			console.log('client disconnected');
 		});
 	});
 
 	// server methods
-	Server.prototype.listen = function(port) {
+	Server.prototype.start = function(port) {
 		app.listen(port || 8001);
 	}
 }
 
+module.exports = Server;
