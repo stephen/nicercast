@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/StephenCWan/nodecast",
   "dependencies": {
-    "express": "~3.5.0"
+    "express": "~3.5.0",
+    "icecast-stack": "~0.3.0"
   }
 }
