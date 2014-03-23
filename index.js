@@ -2,26 +2,34 @@ var express = require('express');
 var spawn = require("child_process").spawn;
 var icecast = require('icecast-stack');
 var lame = require('lame');
+var Throttle = require('throttle');
+var ip = require('ip');
 
 var SAMPLE_SIZE = 16    // 16-bit samples, Little-Endian, Signed
   , CHANNELS = 2        // 2 channels (left and right)
   , SAMPLE_RATE = 44100 // 44,100 Hz sample rate.
 
+// If we're getting raw PCM data as expected, calculate the number of bytes
+// that need to be read for `1 Second` of audio data.
+var BLOCK_ALIGN = SAMPLE_SIZE / 8 * CHANNELS // Number of 'Bytes per Sample'
+  , BYTES_PER_SECOND = SAMPLE_RATE * BLOCK_ALIGN;
+
 var Server = function(inStream, opts) { 
 	var app = express();
+	var serverPort = false;
 	app.disable('x-powered-by');
+
+	var throttleStream = new Throttle(BYTES_PER_SECOND);
+	inStream.pipe(throttleStream);
 
 	// stream playlist (points to other endpoint)
 	app.get('/listen.m3u', function(req, res) {
 
-		var ip = req.headers['x-forwarded-for'] ||
-			req.connection.remoteAddress || 
-	    	req.socket.remoteAddress ||
-	    	req.connection.socket.remoteAddress;
+		var addr = ip.address();
 
 		res.status(200);
 		res.set('Content-Type', 'audio/x-mpegurl');
-		res.send('http://' + ip + '/stream');
+		res.send('http://' + addr + ':' + serverPort + '/listen');
 	});
 
 	app.get('/listen', function(req, res, next) {
@@ -39,7 +47,6 @@ var Server = function(inStream, opts) {
 			headers['icy-metaint'] = 8192;
 		}
 		res.writeHead(200, headers);
-
 
 		// setup metadata transport
 		if (acceptsMetadata) {
@@ -71,18 +78,19 @@ var Server = function(inStream, opts) {
 			encoder.write(chunk);
 		}
 
-		inStream.on("data", callback);
+		throttleStream.on("data", callback);
 		req.connection.on("close", function() {
 
 			// This occurs when the HTTP client closes the connection.
 			encoder.end();
-			inStream.removeListener("data", callback);
+			throttleStream.removeListener("data", callback);
 		});
 	});
 
 	// server methods
 	Server.prototype.start = function(port) {
-		app.listen(port || 8001);
+		serverPort = port || 8001;
+		app.listen(serverPort);
 	}
 }
 

@@ -26,6 +26,8 @@
   "dependencies": {
     "express": "~3.5.0",
     "icecast-stack": "~0.3.0",
-    "lame": "~1.0.3"
+    "lame": "~1.0.3",
+    "throttle": "~1.0.3",
+    "ip": "~0.3.0"
   }
 }
