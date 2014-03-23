@@ -42,8 +42,8 @@ var Server = function(inStream, opts) {
 			"Content-Type": 'audio/mpeg',
 			"Connection" : 'close'
 		};
+		
 		if (acceptsMetadata) {
-			headers['icy-name'] = 'Best';
 			headers['icy-metaint'] = 8192;
 		}
 		res.writeHead(200, headers);
@@ -51,7 +51,7 @@ var Server = function(inStream, opts) {
 		// setup metadata transport
 		if (acceptsMetadata) {
 			res = new icecast.IcecastWriteStack(res, 8192);
-			res.queueMetadata('the best track');
+			res.queueMetadata(opts.name);
 		}
 
 		// setup encodervar lame = require('lame');
@@ -92,6 +92,8 @@ var Server = function(inStream, opts) {
 		serverPort = port || 8001;
 		app.listen(serverPort);
 	}
+
+	Server.prototype.
 }
 
 module.exports = Server;
