@@ -92,8 +92,6 @@ var Server = function(inStream, opts) {
 		serverPort = port || 8001;
 		app.listen(serverPort);
 	}
-
-	Server.prototype.
 }
 
 module.exports = Server;
