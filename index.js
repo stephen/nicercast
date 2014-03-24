@@ -15,83 +15,85 @@ var BLOCK_ALIGN = SAMPLE_SIZE / 8 * CHANNELS // Number of 'Bytes per Sample'
   , BYTES_PER_SECOND = SAMPLE_RATE * BLOCK_ALIGN;
 
 var Server = function(inStream, opts) { 
-	var app = express();
-	var serverPort = false;
-	app.disable('x-powered-by');
+  var app = express();
+  var serverPort = false;
+  app.disable('x-powered-by');
 
-	var throttleStream = new Throttle(BYTES_PER_SECOND);
-	inStream.pipe(throttleStream);
+  opts.name = opts.name || 'Nicercast';
 
-	// stream playlist (points to other endpoint)
-	app.get('/listen.m3u', function(req, res) {
+  var throttleStream = new Throttle(BYTES_PER_SECOND);
+  inStream.pipe(throttleStream);
 
-		var addr = ip.address();
+  // stream playlist (points to other endpoint)
+  app.get('/listen.m3u', function(req, res) {
 
-		res.status(200);
-		res.set('Content-Type', 'audio/x-mpegurl');
-		res.send('http://' + addr + ':' + serverPort + '/listen');
-	});
+    var addr = ip.address();
 
-	app.get('/listen', function(req, res, next) {
+    res.status(200);
+    res.set('Content-Type', 'audio/x-mpegurl');
+    res.send('http://' + addr + ':' + serverPort + '/listen');
+  });
 
-	    var acceptsMetadata = req.headers['icy-metadata'] == 1;
-	    var parsed = require('url').parse(req.url, true);
+  app.get('/listen', function(req, res, next) {
 
-	    // generate response header
-		var headers = {
-			"Content-Type": 'audio/mpeg',
-			"Connection" : 'close'
-		};
-		
-		if (acceptsMetadata) {
-			headers['icy-metaint'] = 8192;
-		}
-		res.writeHead(200, headers);
+      var acceptsMetadata = req.headers['icy-metadata'] == 1;
+      var parsed = require('url').parse(req.url, true);
 
-		// setup metadata transport
-		if (acceptsMetadata) {
-			res = new icecast.IcecastWriteStack(res, 8192);
-			res.queueMetadata(opts.name);
-		}
+      // generate response header
+    var headers = {
+      "Content-Type": 'audio/mpeg',
+      "Connection" : 'close'
+    };
+    
+    if (acceptsMetadata) {
+      headers['icy-metaint'] = 8192;
+    }
+    res.writeHead(200, headers);
 
-		// setup encodervar lame = require('lame');
+    // setup metadata transport
+    if (acceptsMetadata) {
+      res = new icecast.IcecastWriteStack(res, 8192);
+      res.queueMetadata(opts.name);
+    }
 
-		// create the Encoder instance
-		var encoder = new lame.Encoder({
-		  channels: 2,        // 2 channels (left and right)
-		  bitDepth: 16,       // 16-bit samples
-		  sampleRate: 44100   // 44,100 Hz sample rate
-		});
+    // setup encodervar lame = require('lame');
 
-		encoder.on("data", function(chunk) {
-			res.write(chunk);
-		});
+    // create the Encoder instance
+    var encoder = new lame.Encoder({
+      channels: 2,        // 2 channels (left and right)
+      bitDepth: 16,       // 16-bit samples
+      sampleRate: 44100   // 44,100 Hz sample rate
+    });
 
-		/*
-		// burst on connect data
-		for (var i = 0, l = exports.bocData.length; i < l; i++) {
-			encoder.stdin.write(exports.bocData[i]);
-		}
-		*/
+    encoder.on("data", function(chunk) {
+      res.write(chunk);
+    });
 
-		var callback = function(chunk) {
-			encoder.write(chunk);
-		}
+    /*
+    // burst on connect data
+    for (var i = 0, l = exports.bocData.length; i < l; i++) {
+      encoder.stdin.write(exports.bocData[i]);
+    }
+    */
 
-		throttleStream.on("data", callback);
-		req.connection.on("close", function() {
+    var callback = function(chunk) {
+      encoder.write(chunk);
+    }
 
-			// This occurs when the HTTP client closes the connection.
-			encoder.end();
-			throttleStream.removeListener("data", callback);
-		});
-	});
+    throttleStream.on("data", callback);
+    req.connection.on("close", function() {
 
-	// server methods
-	Server.prototype.start = function(port) {
-		serverPort = port || 8001;
-		app.listen(serverPort);
-	}
+      // This occurs when the HTTP client closes the connection.
+      encoder.end();
+      throttleStream.removeListener("data", callback);
+    });
+  });
+
+  // server methods
+  Server.prototype.start = function(port) {
+    serverPort = port || 8001;
+    app.listen(serverPort);
+  }
 }
 
 module.exports = Server;
