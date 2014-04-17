@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/StephenCWan/nicercast.git"
+    "url": "https://github.com/stephen/nicercast.git"
   },
   "keywords": [
     "streaming",
@@ -20,9 +20,9 @@
   "author": "Stephen Wan <stephen@stephenwan.net>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/StephenCWan/nicercast/issues"
+    "url": "https://github.com/stephen/nicercast/issues"
   },
-  "homepage": "https://github.com/StephenCWan/nicercast",
+  "homepage": "https://github.com/stephen/nicercast",
   "dependencies": {
     "express": "~3.5.0",
     "icecast-stack": "~0.3.0",
