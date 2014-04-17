@@ -36,10 +36,10 @@ var Server = function(inStream, opts) {
 
   app.get('/listen', function(req, res, next) {
 
-      var acceptsMetadata = req.headers['icy-metadata'] == 1;
-      var parsed = require('url').parse(req.url, true);
+    var acceptsMetadata = req.headers['icy-metadata'] == 1;
+    var parsed = require('url').parse(req.url, true);
 
-      // generate response header
+    // generate response header
     var headers = {
       "Content-Type": 'audio/mpeg',
       "Connection" : 'close'
@@ -56,7 +56,7 @@ var Server = function(inStream, opts) {
       res.queueMetadata(opts.name);
     }
 
-    // setup encodervar lame = require('lame');
+    // setup encoder
 
     // create the Encoder instance
     var encoder = new lame.Encoder({
@@ -93,6 +93,10 @@ var Server = function(inStream, opts) {
   Server.prototype.start = function(port) {
     serverPort = port || 8001;
     app.listen(serverPort);
+  }
+
+  Server.prototype.stop = function() {
+    app.close();
   }
 }
 
