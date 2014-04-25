@@ -11,7 +11,7 @@ var SAMPLE_SIZE = 16    // 16-bit samples, Little-Endian, Signed
 
 // If we're getting raw PCM data as expected, calculate the number of bytes
 // that need to be read for `1 Second` of audio data.
-var BLOCK_ALIGN = SAMPLE_SIZE / 8 * CHANNELS // Number of 'Bytes per Sample'
+var BLOCK_ALIGN = SAMPLE_SIZE / 8 * CHANNELS      // Number of 'Bytes per Sample'
   , BYTES_PER_SECOND = SAMPLE_RATE * BLOCK_ALIGN;
 
 var Server = function(inStream, opts) { 
@@ -25,14 +25,18 @@ var Server = function(inStream, opts) {
   inStream.pipe(throttleStream);
 
   // stream playlist (points to other endpoint)
-  app.get('/listen.m3u', function(req, res) {
+  var playlistEndpoint = function(req, res) {
 
     var addr = ip.address();
 
     res.status(200);
     res.set('Content-Type', 'audio/x-mpegurl');
     res.send('http://' + addr + ':' + serverPort + '/listen');
-  });
+  };
+
+  app.get('/', playlistEndpoint);
+  app.get('/listen.m3u', playlistEndpoint);
+
 
   app.get('/listen', function(req, res, next) {
 
@@ -53,7 +57,7 @@ var Server = function(inStream, opts) {
     // setup metadata transport
     if (acceptsMetadata) {
       res = new icecast.IcecastWriteStack(res, 8192);
-      res.queueMetadata(opts.name);
+      res.queueMetadata(this.metadata || opts.name);
     }
 
     // setup encoder
@@ -65,9 +69,15 @@ var Server = function(inStream, opts) {
       sampleRate: 44100   // 44,100 Hz sample rate
     });
 
+    var prevMetadata = 0;
     encoder.on("data", function(chunk) {
+      if (acceptsMetadata && prevMetadata != this.metadata) {
+        res.queueMetadata(this.metadata || opts.name);
+        prevMetadata = this.metadata;
+      }
+
       res.write(chunk);
-    });
+    }.bind(this));
 
     /*
     // burst on connect data
@@ -82,18 +92,21 @@ var Server = function(inStream, opts) {
 
     throttleStream.on("data", callback);
     req.connection.on("close", function() {
-
       // This occurs when the HTTP client closes the connection.
       encoder.end();
       throttleStream.removeListener("data", callback);
     });
-  });
+  }.bind(this));
 
   // server methods
   Server.prototype.start = function(port) {
     serverPort = port || 8001;
     app.listen(serverPort);
   }
+
+  Server.prototype.setMetadata = function(metadata) {
+    this.metadata = metadata;
+  };
 
   Server.prototype.stop = function() {
     app.close();
