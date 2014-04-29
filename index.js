@@ -16,7 +16,8 @@ var BLOCK_ALIGN = SAMPLE_SIZE / 8 * CHANNELS      // Number of 'Bytes per Sample
 
 var Server = function(inStream, opts) { 
   var app = express();
-  var serverPort = false;
+  this.app = app;
+  this.serverPort = false;
   app.disable('x-powered-by');
 
   opts.name = opts.name || 'Nicercast';
@@ -31,8 +32,8 @@ var Server = function(inStream, opts) {
 
     res.status(200);
     res.set('Content-Type', 'audio/x-mpegurl');
-    res.send('http://' + addr + ':' + serverPort + '/listen');
-  };
+    res.send('http://' + addr + ':' + this.serverPort + '/listen');
+  }.bind(this);
 
   app.get('/', playlistEndpoint);
   app.get('/listen.m3u', playlistEndpoint);
@@ -97,20 +98,22 @@ var Server = function(inStream, opts) {
       throttleStream.removeListener("data", callback);
     });
   }.bind(this));
+}
 
-  // server methods
-  Server.prototype.start = function(port) {
-    serverPort = port || 8001;
-    app.listen(serverPort);
-  }
 
-  Server.prototype.setMetadata = function(metadata) {
-    this.metadata = metadata;
-  };
 
-  Server.prototype.stop = function() {
-    app.close();
-  }
+// server methods
+Server.prototype.start = function(port) {
+  this.serverPort = port || 8001;
+  this.app.listen(this.serverPort);
+}
+
+Server.prototype.setMetadata = function(metadata) {
+  this.metadata = metadata;
+};
+
+Server.prototype.stop = function() {
+  this.app.close();
 }
 
 module.exports = Server;
