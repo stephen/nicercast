@@ -1,4 +1,5 @@
 var express = require('express');
+var http = require('http');
 var spawn = require("child_process").spawn;
 var icecast = require('icecast-stack');
 var lame = require('lame');
@@ -22,7 +23,7 @@ var Server = function(inStream, opts) {
 
   opts.name = opts.name || 'Nicercast';
 
-  var throttleStream = new Throttle(BYTES_PER_SECOND);
+  var throttleStream = new require('stream').PassThrough(); //new Throttle(BYTES_PER_SECOND);
   inStream.pipe(throttleStream);
 
   // stream playlist (points to other endpoint)
@@ -100,12 +101,10 @@ var Server = function(inStream, opts) {
   }.bind(this));
 }
 
-
-
-// server methods
 Server.prototype.start = function(port) {
   this.serverPort = port || 8001;
-  this.app.listen(this.serverPort);
+  this.server = http.createServer(this.app);
+  this.server.listen(this.serverPort);
 }
 
 Server.prototype.setMetadata = function(metadata) {
@@ -113,7 +112,7 @@ Server.prototype.setMetadata = function(metadata) {
 };
 
 Server.prototype.stop = function() {
-  this.app.close();
+  this.server.close();
 }
 
 module.exports = Server;
