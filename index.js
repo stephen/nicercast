@@ -103,8 +103,7 @@ var Server = function(inStream, opts) {
 
 Server.prototype.start = function(port) {
   this.serverPort = port || 8001;
-  this.server = http.createServer(this.app);
-  this.server.listen(this.serverPort);
+  this.server = http.createServer(this.app).listen(this.serverPort);
 }
 
 Server.prototype.setMetadata = function(metadata) {
@@ -112,7 +111,7 @@ Server.prototype.setMetadata = function(metadata) {
 };
 
 Server.prototype.stop = function() {
-  this.server.close();
+  
 }
 
 module.exports = Server;
