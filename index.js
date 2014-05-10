@@ -111,7 +111,11 @@ Server.prototype.setMetadata = function(metadata) {
 };
 
 Server.prototype.stop = function() {
-  
+  try {
+    this.server.close();
+  } catch (err) {
+
+  }
 }
 
 module.exports = Server;
