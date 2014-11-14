@@ -1,10 +1,9 @@
 var express = require('express');
 var http = require('http');
-var spawn = require("child_process").spawn;
 var icecast = require('icecast-stack');
-var lame = require('lame');
-var Throttle = require('throttle');
 var ip = require('ip');
+var lame = require('lame');
+var stream = new require('stream');
 
 // 16-bit signed samples
 var SAMPLE_SIZE = 16, CHANNELS = 2, SAMPLE_RATE = 44100;
@@ -22,7 +21,7 @@ var Server = function(inputStream, opts) {
 
   opts.name = opts.name || 'Nicercast';
 
-  var throttleStream = new require('stream').PassThrough(); //new Throttle(BYTES_PER_SECOND);
+  var throttleStream = stream.PassThrough();
   this._internalStream = throttleStream;
   this.inputStream.pipe(throttleStream);
 
