@@ -15,16 +15,18 @@ var SAMPLE_SIZE = 16    // 16-bit samples, Little-Endian, Signed
 var BLOCK_ALIGN = SAMPLE_SIZE / 8 * CHANNELS      // Number of 'Bytes per Sample'
   , BYTES_PER_SECOND = SAMPLE_RATE * BLOCK_ALIGN;
 
-var Server = function(inStream, opts) { 
+var Server = function(inputStream, opts) {
   var app = express();
   this.app = app;
   this.serverPort = false;
+  this.inputStream = inputStream;
   app.disable('x-powered-by');
 
   opts.name = opts.name || 'Nicercast';
 
   var throttleStream = new require('stream').PassThrough(); //new Throttle(BYTES_PER_SECOND);
-  inStream.pipe(throttleStream);
+  this._internalStream = throttleStream;
+  this.inputStream.pipe(throttleStream);
 
   // stream playlist (points to other endpoint)
   var playlistEndpoint = function(req, res) {
@@ -50,7 +52,7 @@ var Server = function(inStream, opts) {
       "Content-Type": 'audio/mpeg',
       "Connection" : 'close'
     };
-    
+
     if (acceptsMetadata) {
       headers['icy-metaint'] = 8192;
     }
@@ -105,6 +107,12 @@ Server.prototype.start = function(port) {
   this.serverPort = port || 8001;
   this.server = http.createServer(this.app).listen(this.serverPort);
 }
+
+Server.prototype.setInputStream = function(inputStream) {
+  this.inputStream.unpipe();
+  this.inputStream = inputStream;
+  this.inputStream.pipe(this._internalStream);
+};
 
 Server.prototype.setMetadata = function(metadata) {
   this.metadata = metadata;
