@@ -1,6 +1,6 @@
 {
   "name": "nicercast",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "simple icecast compliant streaming server",
   "main": "index.js",
   "scripts": {
