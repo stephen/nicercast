@@ -28,7 +28,7 @@ var Server = function(inputStream, opts) {
   // stream playlist (points to other endpoint)
   var playlistEndpoint = function(req, res) {
 
-    var addr = ip.address();
+    var addr = opts.ipAddress || ip.address();
 
     res.status(200);
     res.set('Content-Type', 'audio/x-mpegurl');
