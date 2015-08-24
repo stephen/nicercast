@@ -94,9 +94,15 @@ var Server = function(inputStream, opts) {
   }.bind(this));
 }
 
-Server.prototype.start = function(port) {
-  this.serverPort = port || 8001;
-  this.server = http.createServer(this.app).listen(this.serverPort);
+Server.prototype.start = function(port, callback) {
+  this.serverPort = port != null ? port : 0;
+  this.server = http.createServer(this.app).listen(this.serverPort, function() {
+    this.serverPort = this.server.address().port;
+
+    if (callback && typeof callback === 'function') {
+      callback(this.serverPort);
+    }
+  }.bind(this));
 }
 
 Server.prototype.setInputStream = function(inputStream) {
