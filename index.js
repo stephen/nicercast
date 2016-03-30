@@ -42,7 +42,7 @@ var Server = function(inputStream, opts) {
   // audio endpoint
   app.get('/listen', function(req, res, next) {
 
-    var acceptsMetadata = req.headers['icy-metadata'] === 1;
+    var acceptsMetadata = req.headers['icy-metadata'] == 1;
     var parsed = require('url').parse(req.url, true);
 
     // generate response header
