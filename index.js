@@ -142,7 +142,11 @@ Nicercast.prototype.address = function () {
 }
 
 function start (port, callback) {
-  this.listen(port, callback)
+  var self = this
+
+  this.listen(port || 0, function () {
+    callback(self.address().port)
+  })
 }
 
 function stop () {
